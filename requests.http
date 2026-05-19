@@ -1,0 +1,62 @@
+### WebFlux Docker Demo - API Requests
+### Use with VS Code REST Client or similar tools
+
+@baseUrl = http://localhost:8080/api
+@contentType = application/json
+
+### 1. Simple Hello Endpoint
+GET {{baseUrl}}/hello
+
+### 2. Application Information
+GET {{baseUrl}}/info
+Accept: {{contentType}}
+
+### 3. Health Check
+GET {{baseUrl}}/health
+Accept: {{contentType}}
+
+### 4. Async Operation with 5 Second Delay
+GET {{baseUrl}}/async-delay/5
+
+### 5. Reactive Chain with Processing
+GET {{baseUrl}}/reactive-chain/10
+Accept: {{contentType}}
+
+### 6. Reactive Chain with Invalid Input (should error)
+GET {{baseUrl}}/reactive-chain/-5
+Accept: {{contentType}}
+
+### 7. Server-Sent Events Stream
+GET {{baseUrl}}/stream
+Accept: text/event-stream
+
+### 8. Numbers Stream (100 values)
+GET {{baseUrl}}/numbers
+Accept: text/event-stream
+
+### 9. Spring Boot Health Endpoint
+GET http://localhost:8080/health
+
+### 10. Application Metrics
+GET http://localhost:8080/metrics
+
+---
+
+### Notes:
+# - For stream endpoints, the client should support chunked transfer encoding
+# - SSE streams continuously until they reach their completion
+# - The /api/stream endpoint sends 10 events at 1-second intervals
+# - The /api/numbers endpoint sends 100 numbers with 100ms delays between each
+# - The /api/reactive-chain endpoint processes input with a 500ms delay
+#
+# To test with curl:
+# curl http://localhost:8080/api/hello
+# curl http://localhost:8080/api/stream
+# curl http://localhost:8080/api/async-delay/3
+#
+# To test with PowerShell:
+# .\test-api.ps1
+#
+# To test with Bash:
+# bash test-api.sh
+
