@@ -1,7 +1,7 @@
 # WebFlux Docker Demo - API Test Script (PowerShell)
 # This script tests all available endpoints
 
-$BASE_URL = "http://localhost:8080/api"
+$BASE_URL = "http://localhost:8081/api"
 $TIMEOUT = 10
 
 Write-Host "======================================" -ForegroundColor Cyan

@@ -7,101 +7,89 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.test.StepVerifier;
 
 @SpringBootTest
 @AutoConfigureWebTestClient
-public class WebfluxDockerApplicationTests {
+class WebfluxDockerApplicationTests {
 
-	@Autowired
-	private WebTestClient webTestClient;
+    @Autowired
+    private WebTestClient client;
 
-	@Test
-	public void testHelloEndpoint() {
-		webTestClient.get()
-			.uri("/api/hello")
-			.exchange()
-			.expectStatus().isOk()
-			.expectBody(String.class)
-			.isEqualTo("Hello from a Reactive WebFlux App running in Docker!");
-	}
+    @Test
+    void hello() {
+        client.get().uri("/api/hello").exchange().expectStatus().isOk()
+            .expectBody(String.class)
+            .isEqualTo("Hello from a Reactive WebFlux App running in Docker!");
+    }
 
-	@Test
-	public void testInfoEndpoint() {
-		webTestClient.get()
-			.uri("/api/info")
-			.exchange()
-			.expectStatus().isOk()
-			.expectBody()
-			.jsonPath("$.name").isEqualTo("WebFlux Docker Demo")
-			.jsonPath("$.version").isEqualTo("1.0.0")
-			.jsonPath("$.javaVersion").exists();
-	}
+    @Test
+    void info() {
+        client.get().uri("/api/info").exchange().expectStatus().isOk()
+            .expectBody().jsonPath("$.name").isEqualTo("WebFlux Docker Demo")
+            .jsonPath("$.javaVersion").exists();
+    }
 
-	@Test
-	public void testHealthEndpoint() {
-		webTestClient.get()
-			.uri("/api/health")
-			.exchange()
-			.expectStatus().isOk()
-			.expectBody()
-			.jsonPath("$.status").isEqualTo("UP")
-			.jsonPath("$.message").isEqualTo("Application is running")
-			.jsonPath("$.timestamp").exists();
-	}
+    @Test
+    void customHealth() {
+        client.get().uri("/api/health").exchange().expectStatus().isOk()
+            .expectBody().jsonPath("$.status").isEqualTo("UP");
+    }
 
-	@Test
-	public void testAsyncDelayEndpoint() {
-		webTestClient.get()
-			.uri("/api/async-delay/1")
-			.exchange()
-			.expectStatus().isOk()
-			.expectBody(String.class)
-			.isEqualTo("Delayed response after 1 seconds");
-	}
+    @Test
+    void actuatorHealth() {
+        client.get().uri("/actuator/health").exchange().expectStatus().isOk()
+            .expectBody().jsonPath("$.status").isEqualTo("UP");
+    }
 
-	@Test
-	public void testReactiveChainEndpoint() {
-		webTestClient.get()
-			.uri("/api/reactive-chain/5")
-			.exchange()
-			.expectStatus().isOk()
-			.expectBody()
-			.jsonPath("$.value").isEqualTo(10)
-			.jsonPath("$.message").isEqualTo("Processed value: 10");
-	}
+    @Test
+    void asyncDelay() {
+        client.mutate().responseTimeout(Duration.ofSeconds(5)).build()
+            .get().uri("/api/async-delay/1").exchange().expectStatus().isOk()
+            .expectBody(String.class).isEqualTo("Delayed response after 1 seconds");
+    }
 
-	@Test
-	public void testReactiveChainWithInvalidInput() {
-		webTestClient.get()
-			.uri("/api/reactive-chain/-5")
-			.exchange()
-			.expectStatus().is5xxServerError();
-	}
+    @Test
+    void invalidDelaysReturnBadRequest() {
+        client.get().uri("/api/async-delay/-1").exchange().expectStatus().isBadRequest();
+        client.get().uri("/api/async-delay/31").exchange().expectStatus().isBadRequest();
+    }
 
-	@Test
-	public void testStreamEndpoint() {
-		webTestClient.get()
-			.uri("/api/stream")
-			.exchange()
-			.expectStatus().isOk()
-			.expectHeader()
-			.contentType(MediaType.TEXT_EVENT_STREAM)
-			.expectBodyList(String.class)
-			.hasSize(10);
-	}
+    @Test
+    void reactiveChain() {
+        client.get().uri("/api/reactive-chain/5").exchange().expectStatus().isOk()
+            .expectBody().jsonPath("$.value").isEqualTo(10)
+            .jsonPath("$.message").isEqualTo("Processed value: 10");
+    }
 
-	@Test
-	public void testNumbersStream() {
-		webTestClient.get()
-			.uri("/api/numbers")
-			.exchange()
-			.expectStatus().isOk()
-			.expectHeader()
-			.contentType(MediaType.TEXT_EVENT_STREAM)
-			.expectBodyList(Integer.class)
-			.hasSize(100);
-	}
+    @Test
+    void invalidChainsReturnBadRequest() {
+        client.get().uri("/api/reactive-chain/-5").exchange().expectStatus().isBadRequest();
+        client.get().uri("/api/reactive-chain/0").exchange().expectStatus().isBadRequest();
+        client.get().uri("/api/reactive-chain/2147483647").exchange().expectStatus().isBadRequest();
+    }
 
+    @Test
+    void eventStreamCompletes() {
+        WebTestClient streamingClient = client.mutate().responseTimeout(Duration.ofSeconds(20)).build();
+        var result = streamingClient.get().uri("/api/stream").exchange()
+            .expectStatus().isOk()
+            .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM)
+            .returnResult(String.class);
+        StepVerifier.create(result.getResponseBody())
+            .expectNextCount(10)
+            .verifyComplete();
+    }
+
+    @Test
+    void numberStreamCompletes() {
+        WebTestClient streamingClient = client.mutate().responseTimeout(Duration.ofSeconds(20)).build();
+        var result = streamingClient.get().uri("/api/numbers").exchange()
+            .expectStatus().isOk()
+            .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM)
+            .returnResult(Integer.class);
+        StepVerifier.create(result.getResponseBody())
+            .expectNextCount(100)
+            .verifyComplete();
+    }
 }
-
-

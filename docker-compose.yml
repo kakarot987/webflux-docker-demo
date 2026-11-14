@@ -5,20 +5,12 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8081:8080"
-    container_name: webflux-docker-demo
     environment:
-      - JAVA_OPTS=-Xmx512m -Xms256m
+      JAVA_TOOL_OPTIONS: "-Xms256m -Xmx512m"
     restart: unless-stopped
-    networks:
-      - webflux-network
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/health"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/actuator/health"]
       interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 10s
-
-networks:
-  webflux-network:
-    driver: bridge
-
+      timeout: 5s
+      retries: 5
+      start_period: 30s
