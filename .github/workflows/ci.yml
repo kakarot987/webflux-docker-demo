@@ -22,7 +22,11 @@ jobs:
         run: docker compose up --build -d
       - name: Verify health and APIs
         run: |
-          curl --retry 30 --retry-delay 3 --retry-connrefused --fail http://localhost:8081/actuator/health
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8081/actuator/health; then break; fi
+            sleep 2
+          done
+          curl -fsS http://localhost:8081/actuator/health
           curl --fail http://localhost:8081/api/hello
           test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8081/api/async-delay/-1)" = "400"
       - name: Logs on failure
