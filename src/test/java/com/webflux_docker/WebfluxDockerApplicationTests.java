@@ -74,7 +74,7 @@ class WebfluxDockerApplicationTests {
         WebTestClient streamingClient = client.mutate().responseTimeout(Duration.ofSeconds(20)).build();
         var result = streamingClient.get().uri("/api/stream").exchange()
             .expectStatus().isOk()
-            .expectHeader().contentType(MediaType.TEXT_EVENT_STREAM)
+            .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM)
             .returnResult(String.class);
         StepVerifier.create(result.getResponseBody())
             .expectNextCount(10)
@@ -86,7 +86,7 @@ class WebfluxDockerApplicationTests {
         WebTestClient streamingClient = client.mutate().responseTimeout(Duration.ofSeconds(20)).build();
         var result = streamingClient.get().uri("/api/numbers").exchange()
             .expectStatus().isOk()
-            .expectHeader().contentType(MediaType.TEXT_EVENT_STREAM)
+            .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM)
             .returnResult(Integer.class);
         StepVerifier.create(result.getResponseBody())
             .expectNextCount(100)
