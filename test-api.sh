@@ -3,7 +3,7 @@
 # WebFlux Docker Demo - API Test Script
 # This script tests all available endpoints
 
-BASE_URL="http://localhost:8080/api"
+BASE_URL="http://localhost:8081/api"
 TIMEOUT=10
 
 echo "======================================"
@@ -56,7 +56,7 @@ echo "======================================"
 echo ""
 
 echo "Testing: Server-Sent Events Stream"
-echo "Command: curl http://localhost:8080/api/stream"
+echo "Command: curl http://localhost:8081/api/stream"
 echo "Events:"
 curl -s "$BASE_URL/stream" | head -5
 echo ""

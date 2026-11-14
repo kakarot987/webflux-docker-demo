@@ -1,0 +1,33 @@
+name: CI
+on:
+  push:
+    branches: [main, "fix/**"]
+  pull_request:
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - run: chmod +x gradlew && ./gradlew --no-daemon test
+  docker-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and run clean Compose stack
+        run: docker compose up --build -d
+      - name: Verify health and APIs
+        run: |
+          curl --retry 30 --retry-delay 3 --retry-connrefused --fail http://localhost:8081/actuator/health
+          curl --fail http://localhost:8081/api/hello
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8081/api/async-delay/-1)" = "400"
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs
+      - name: Teardown
+        if: always()
+        run: docker compose down -v
